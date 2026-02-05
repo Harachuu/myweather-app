@@ -1,6 +1,6 @@
 # 🌦️ MyWeather - Weather App
 
-Built with **React Native (Expo)**, **TypeScript**, and **OpenWeather API**. Leveraging **AI-assisted development (Google Gemini)**.
+Built with **React Native (Expo)**, **TypeScript**, **OpenWeather API**, and **AI-assistance (Google Gemini)**.
 
 ## 📱 App Preview
 
