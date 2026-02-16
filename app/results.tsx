@@ -7,42 +7,43 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 const { height } = Dimensions.get('window');
 
-// Logic: Background color updates based on OpenWeatherMap icon codes
 const getBackgroundColor = (icon: string) => {
-  if (!icon) return '#0f172a'; // Default deep slate
+  if (!icon) return '#0f172a'; 
   const isNight = icon.endsWith('n');
-  
-  // Clear Sky
   if (icon.startsWith('01')) return isNight ? '#1e293b' : '#38bdf8'; 
-  
-  // Clouds (Few, Scattered, Broken)
   if (icon.startsWith('02') || icon.startsWith('03') || icon.startsWith('04')) {
     return isNight ? '#334155' : '#94a3b8';
   }
-  
-  // Rain / Drizzle
   if (icon.startsWith('09') || icon.startsWith('10')) return '#475569';
-  
-  // Thunderstorm
   if (icon.startsWith('11')) return '#1e1b4b'; 
-  
-  // Snow
   if (icon.startsWith('13')) return '#cbd5e1'; 
-  
-  // Mist / Fog / Haze
   if (icon.startsWith('50')) return '#64748b';
-
-  return '#0f172a'; // Fallback
+  return '#0f172a';
 };
 
-const getWeatherIcon = (icon: string) => {
-  if (icon.startsWith('01')) return 'weather-sunny';
-  if (icon.startsWith('02')) return 'weather-partly-cloudy';
-  if (icon.startsWith('03') || icon.startsWith('04')) return 'weather-cloudy';
-  if (icon.startsWith('09') || icon.startsWith('10')) return 'weather-rainy';
-  if (icon.startsWith('11')) return 'weather-lightning';
-  if (icon.startsWith('13')) return 'weather-snowy';
-  return 'weather-cloudy';
+// Updated: Improved Icon Logic mapping to your requested icons
+const getLargeWeatherIcon = (icon: string, sunrise: number, sunset: number) => {
+  const now = Math.floor(Date.now() / 1000);
+  
+  // Logic for Night: If current time is between sunset and sunrise
+  if (now > sunset || now < sunrise) {
+    if (icon.startsWith('02') || icon.startsWith('03') || icon.startsWith('04')) {
+      return 'weather-night-partly-cloudy';
+    }
+    return 'weather-night';
+  }
+
+  // Logic for Day
+  if (icon === '01d') return 'weather-sunny';
+  if (icon === '02d') return 'weather-partly-cloudy';
+  if (icon === '03d' || icon === '04d') return 'cloud-outline';
+  if (icon === '09d') return 'weather-rainy';
+  if (icon === '10d') return 'weather-rainy';
+  if (icon === '11d') return 'weather-lightning-rainy';
+  if (icon === '13d') return 'weather-snowy'; // Can be mapped further to snowy-heavy if needed
+  if (icon === '50d') return 'weather-fog';
+
+  return 'weather-partly-cloudy'; // Fallback
 };
 
 export default function ResultsScreen() {
@@ -55,11 +56,12 @@ export default function ResultsScreen() {
 
   const initialLoad = async () => {
     try {
-      const storedUnits = await AsyncStorage.getItem('unit_preference');
+      const [storedUnits, storedFavs] = await Promise.all([
+        AsyncStorage.getItem('unit_preference'),
+        AsyncStorage.getItem('favorites')
+      ]);
       if (storedUnits) setUnits(storedUnits as 'imperial' | 'metric');
-    } catch (e) {
-      console.log("Error loading units", e);
-    }
+    } catch (e) { console.log("Error loading units", e); }
   };
 
   const fetchWeather = async (activeUnits = units) => {
@@ -83,11 +85,8 @@ export default function ResultsScreen() {
       } else {
         Alert.alert("Error", data.message || "Location not found", [{ text: "Go Back", onPress: () => router.back() }]);
       }
-    } catch (e) {
-      Alert.alert("Error", "Network failed");
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { Alert.alert("Error", "Network failed"); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => {
@@ -109,18 +108,14 @@ export default function ResultsScreen() {
         setIsSaved(false);
       } else { 
         list.push({ 
-          zip: zip || null, 
-          name: weather.name, 
+          zip: zip || null, name: weather.name, 
           temp: Math.round(weather.main.temp), 
-          lat: lat || null, 
-          lon: lon || null 
+          lat: lat || null, lon: lon || null 
         });
         setIsSaved(true);
       }
       await AsyncStorage.setItem('favorites', JSON.stringify(list));
-    } catch (e) {
-      Alert.alert("Error", "Could not update favorites");
-    }
+    } catch (e) { Alert.alert("Error", "Could not update favorites"); }
   };
 
   const getAttire = () => {
@@ -154,8 +149,9 @@ export default function ResultsScreen() {
   }
 
   const dynamicBg = getBackgroundColor(weather.weather[0].icon);
-  const weatherIconName = getWeatherIcon(weather.weather[0].icon);
   const attire = getAttire();
+  // New Large Icon Logic
+  const largeIcon = getLargeWeatherIcon(weather.weather[0].icon, weather.sys.sunrise, weather.sys.sunset);
 
   return (
     <SafeAreaProvider>
@@ -180,16 +176,21 @@ export default function ResultsScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Hero Section */}
           <View style={styles.heroSection}>
             <Text style={styles.city}>{weather.name}</Text>
+            
+            {/* NEW: Large Weather Icon above Temp */}
+            <Icons.MaterialCommunityIcons name={largeIcon as any} size={80} color="#fff" style={styles.largeIcon} />
+            
             <Text style={styles.temp}>{Math.round(weather.main.temp)}°</Text>
             <Text style={styles.feelsLikeText}>FEELS LIKE {Math.round(weather.main.feels_like)}°</Text>
             <View style={styles.conditionContainer}>
-              <Icons.MaterialCommunityIcons name={weatherIconName} size={24} color="#fff" style={{ marginRight: 8 }} />
               <Text style={styles.desc}>{weather.weather[0].description}</Text>
             </View>
           </View>
 
+          {/* 2x2 Glass Tile Grid */}
           <View style={styles.grid}>
             <DetailTile icon="water-outline" label="Humidity" value={`${weather.main.humidity}%`} />
             <DetailTile icon="weather-windy" label="Wind Speed" value={`${Math.round(weather.wind.speed)} ${units === 'imperial' ? 'mph' : 'm/s'}`} />
@@ -220,22 +221,56 @@ const DetailTile = ({ icon, label, value }: any) => (
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   nav: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 10 },
   navRight: { flexDirection: 'row' },
-  iconBtn: { backgroundColor: 'rgba(255,255,255,0.15)', padding: 8, borderRadius: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  iconBtn: { 
+    backgroundColor: 'rgba(255,255,255,0.15)', 
+    padding: 8, 
+    borderRadius: 15, 
+    borderWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.2)' 
+  },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-  heroSection: { alignItems: 'center', marginTop: 30, marginBottom: 30 },
-  city: { color: '#fff', fontSize: 32, fontWeight: '300', letterSpacing: 1 },
-  temp: { color: '#fff', fontSize: 100, fontWeight: 'bold', marginTop: 10 },
-  feelsLikeText: { color: 'rgba(255,255,255,0.6)', fontSize: 16, fontWeight: '600', marginBottom: 10, letterSpacing: 1, textTransform: 'uppercase' },
+  heroSection: { alignItems: 'center', marginTop: 20, marginBottom: 30 },
+  city: { color: '#fff', fontSize: 32, fontWeight: '300', letterSpacing: 1, marginBottom: 15 },
+  largeIcon: { marginBottom: 10 }, // Style for the new large icon
+  temp: { color: '#fff', fontSize: 100, fontWeight: 'bold' },
+  feelsLikeText: { 
+    color: 'rgba(255,255,255,0.6)', 
+    fontSize: 16, 
+    fontWeight: '600', 
+    marginBottom: 10, 
+    letterSpacing: 1, 
+    textTransform: 'uppercase' 
+  },
   conditionContainer: { flexDirection: 'row', alignItems: 'center' },
   desc: { color: 'rgba(255,255,255,0.8)', fontSize: 20, textTransform: 'capitalize' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  tile: { backgroundColor: 'rgba(255,255,255,0.12)', paddingHorizontal: 15, paddingVertical: 18, borderRadius: 24, width: '48%', marginBottom: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', flexDirection: 'row', alignItems: 'center', height: 80 },
+  tile: { 
+    backgroundColor: 'rgba(255,255,255,0.12)', 
+    paddingHorizontal: 15, 
+    paddingVertical: 18, 
+    borderRadius: 24, 
+    width: '48%', 
+    marginBottom: 15, 
+    borderWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.2)', 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    height: 80 
+  },
   tileTextContainer: { marginLeft: 10, flex: 1 },
   tileLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '600', textTransform: 'uppercase' },
   tileVal: { color: '#fff', fontSize: 15, fontWeight: 'bold', marginTop: 2 },
-  glassActionBtn: { backgroundColor: 'rgba(255,255,255,0.15)', marginTop: 10, padding: 20, borderRadius: 20, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
+  glassActionBtn: { 
+    backgroundColor: 'rgba(255,255,255,0.15)', 
+    marginTop: 10, 
+    padding: 20, 
+    borderRadius: 20, 
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.3)' 
+  },
   glassActionText: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
 });

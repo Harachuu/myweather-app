@@ -60,7 +60,7 @@ export default function WeatherSearch() {
             <View style={styles.header}>
               <Text style={styles.logo}>MYWEATHER</Text>
               <TouchableOpacity onPress={() => router.push('/favorites')} style={styles.favoritesButton}>
-                <Icons.MaterialCommunityIcons name="heart" size={22} color="#ff4757" />
+                <Icons.MaterialCommunityIcons name="heart-multiple" size={22} color="#ff4757" />
               </TouchableOpacity>
             </View>
             
