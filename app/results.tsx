@@ -2,7 +2,7 @@ import * as Icons from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 const { height } = Dimensions.get('window');
@@ -21,29 +21,23 @@ const getBackgroundColor = (icon: string) => {
   return '#0f172a';
 };
 
-// Updated: Improved Icon Logic mapping to your requested icons
 const getLargeWeatherIcon = (icon: string, sunrise: number, sunset: number) => {
   const now = Math.floor(Date.now() / 1000);
-  
-  // Logic for Night: If current time is between sunset and sunrise
   if (now > sunset || now < sunrise) {
     if (icon.startsWith('02') || icon.startsWith('03') || icon.startsWith('04')) {
       return 'weather-night-partly-cloudy';
     }
     return 'weather-night';
   }
-
-  // Logic for Day
   if (icon === '01d') return 'weather-sunny';
   if (icon === '02d') return 'weather-partly-cloudy';
   if (icon === '03d' || icon === '04d') return 'cloud-outline';
   if (icon === '09d') return 'weather-rainy';
   if (icon === '10d') return 'weather-rainy';
   if (icon === '11d') return 'weather-lightning-rainy';
-  if (icon === '13d') return 'weather-snowy'; // Can be mapped further to snowy-heavy if needed
+  if (icon === '13d') return 'weather-snowy';
   if (icon === '50d') return 'weather-fog';
-
-  return 'weather-partly-cloudy'; // Fallback
+  return 'weather-partly-cloudy';
 };
 
 export default function ResultsScreen() {
@@ -56,10 +50,7 @@ export default function ResultsScreen() {
 
   const initialLoad = async () => {
     try {
-      const [storedUnits, storedFavs] = await Promise.all([
-        AsyncStorage.getItem('unit_preference'),
-        AsyncStorage.getItem('favorites')
-      ]);
+      const storedUnits = await AsyncStorage.getItem('unit_preference');
       if (storedUnits) setUnits(storedUnits as 'imperial' | 'metric');
     } catch (e) { console.log("Error loading units", e); }
   };
@@ -93,6 +84,7 @@ export default function ResultsScreen() {
     initialLoad().then(() => fetchWeather());
   }, [zip, lat, lon, units]);
 
+  // RESTORED: Unit toggle logic
   const toggleUnits = async () => {
     const newUnit = units === 'imperial' ? 'metric' : 'imperial';
     setUnits(newUnit);
@@ -150,7 +142,6 @@ export default function ResultsScreen() {
 
   const dynamicBg = getBackgroundColor(weather.weather[0].icon);
   const attire = getAttire();
-  // New Large Icon Logic
   const largeIcon = getLargeWeatherIcon(weather.weather[0].icon, weather.sys.sunrise, weather.sys.sunset);
 
   return (
@@ -162,6 +153,9 @@ export default function ResultsScreen() {
           </TouchableOpacity>
           
           <View style={styles.navRight}>
+            <TouchableOpacity onPress={() => router.push('/settings')} style={[styles.iconBtn, { marginRight: 10 }]}>
+              <Icons.MaterialCommunityIcons name="cog" size={24} color="#fff" />
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/favorites')} style={[styles.iconBtn, { marginRight: 10 }]}>
               <Icons.MaterialCommunityIcons name="heart-multiple" size={24} color="#fff" />
             </TouchableOpacity>
@@ -175,14 +169,14 @@ export default function ResultsScreen() {
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {/* Hero Section */}
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={loading && !!weather} onRefresh={() => fetchWeather()} tintColor="#fff" />}
+        >
           <View style={styles.heroSection}>
             <Text style={styles.city}>{weather.name}</Text>
-            
-            {/* NEW: Large Weather Icon above Temp */}
             <Icons.MaterialCommunityIcons name={largeIcon as any} size={80} color="#fff" style={styles.largeIcon} />
-            
             <Text style={styles.temp}>{Math.round(weather.main.temp)}°</Text>
             <Text style={styles.feelsLikeText}>FEELS LIKE {Math.round(weather.main.feels_like)}°</Text>
             <View style={styles.conditionContainer}>
@@ -190,7 +184,6 @@ export default function ResultsScreen() {
             </View>
           </View>
 
-          {/* 2x2 Glass Tile Grid */}
           <View style={styles.grid}>
             <DetailTile icon="water-outline" label="Humidity" value={`${weather.main.humidity}%`} />
             <DetailTile icon="weather-windy" label="Wind Speed" value={`${Math.round(weather.wind.speed)} ${units === 'imperial' ? 'mph' : 'm/s'}`} />
@@ -200,6 +193,7 @@ export default function ResultsScreen() {
             <DetailTile icon="weather-sunset-down" label="Sunset" value={new Date(weather.sys.sunset * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} />
           </View>
 
+          {/* RESTORED: Switch Button at bottom */}
           <TouchableOpacity style={styles.glassActionBtn} onPress={toggleUnits}>
             <Text style={styles.glassActionText}>Switch to {units === 'imperial' ? 'Celsius' : 'Fahrenheit'}</Text>
           </TouchableOpacity>
@@ -224,42 +218,17 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   nav: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 10 },
   navRight: { flexDirection: 'row' },
-  iconBtn: { 
-    backgroundColor: 'rgba(255,255,255,0.15)', 
-    padding: 8, 
-    borderRadius: 15, 
-    borderWidth: 1, 
-    borderColor: 'rgba(255,255,255,0.2)' 
-  },
+  iconBtn: { backgroundColor: 'rgba(255,255,255,0.15)', padding: 8, borderRadius: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   heroSection: { alignItems: 'center', marginTop: 20, marginBottom: 30 },
   city: { color: '#fff', fontSize: 32, fontWeight: '300', letterSpacing: 1, marginBottom: 15 },
-  largeIcon: { marginBottom: 10 }, // Style for the new large icon
+  largeIcon: { marginBottom: 10 },
   temp: { color: '#fff', fontSize: 100, fontWeight: 'bold' },
-  feelsLikeText: { 
-    color: 'rgba(255,255,255,0.6)', 
-    fontSize: 16, 
-    fontWeight: '600', 
-    marginBottom: 10, 
-    letterSpacing: 1, 
-    textTransform: 'uppercase' 
-  },
+  feelsLikeText: { color: 'rgba(255,255,255,0.6)', fontSize: 16, fontWeight: '600', marginBottom: 10, letterSpacing: 1, textTransform: 'uppercase' },
   conditionContainer: { flexDirection: 'row', alignItems: 'center' },
   desc: { color: 'rgba(255,255,255,0.8)', fontSize: 20, textTransform: 'capitalize' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  tile: { 
-    backgroundColor: 'rgba(255,255,255,0.12)', 
-    paddingHorizontal: 15, 
-    paddingVertical: 18, 
-    borderRadius: 24, 
-    width: '48%', 
-    marginBottom: 15, 
-    borderWidth: 1, 
-    borderColor: 'rgba(255,255,255,0.2)', 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    height: 80 
-  },
+  tile: { backgroundColor: 'rgba(255,255,255,0.12)', paddingHorizontal: 15, paddingVertical: 18, borderRadius: 24, width: '48%', marginBottom: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', flexDirection: 'row', alignItems: 'center', height: 80 },
   tileTextContainer: { marginLeft: 10, flex: 1 },
   tileLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '600', textTransform: 'uppercase' },
   tileVal: { color: '#fff', fontSize: 15, fontWeight: 'bold', marginTop: 2 },

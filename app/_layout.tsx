@@ -4,16 +4,13 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 export default function Layout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <Stack screenOptions={{ 
-        headerStyle: { backgroundColor: '#0f172a' },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: 'bold' },
-      }}>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="weather" options={{ headerShown: false }} />
-        <Stack.Screen name="results" options={{ headerShown: false }} />
-        <Stack.Screen name="favorites" options={{ title: 'My Favorites' }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="weather" />
+        <Stack.Screen name="results" />
+        <Stack.Screen name="favorites" />
+        <Stack.Screen name="settings" />
       </Stack>
     </GestureHandlerRootView>
   );
-}  
+}

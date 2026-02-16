@@ -58,6 +58,9 @@ export default function WeatherSearch() {
         <SafeAreaView style={styles.container}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
             <View style={styles.header}>
+              <TouchableOpacity onPress={() => router.push('/settings')} style={styles.iconBtn}>
+                <Icons.MaterialCommunityIcons name="cog" size={24} color="#fff" />
+              </TouchableOpacity>
               <Text style={styles.logo}>MYWEATHER</Text>
               <TouchableOpacity onPress={() => router.push('/favorites')} style={styles.favoritesButton}>
                 <Icons.MaterialCommunityIcons name="heart-multiple" size={22} color="#ff4757" />
@@ -102,6 +105,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
   header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 25, paddingTop: 20, alignItems: 'center' },
   logo: { color: '#fff', fontSize: 18, fontWeight: '900', letterSpacing: 3 },
+  iconBtn: { backgroundColor: 'rgba(255,255,255,0.1)', width: 45, height: 45, borderRadius: 22.5, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
   favoritesButton: { backgroundColor: 'rgba(255,255,255,0.1)', width: 45, height: 45, borderRadius: 22.5, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
   content: { flex: 1, paddingHorizontal: 25, justifyContent: 'center' },
   mainDisplay: { alignItems: 'center', marginBottom: 50 },

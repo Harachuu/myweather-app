@@ -21,6 +21,7 @@ export default function FavoritesScreen() {
     } catch (e) { console.error("Error loading data", e); }
   };
 
+  // RESTORED: Unit toggle logic for Favorites page
   const toggleUnits = async () => {
     const newUnit = units === 'imperial' ? 'metric' : 'imperial';
     setUnits(newUnit);
@@ -38,7 +39,6 @@ export default function FavoritesScreen() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        {/* Clean Header: Single Back Button, Center Title, Right Toggle */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
             <Icons.MaterialCommunityIcons name="chevron-left" size={30} color="#fff" />
@@ -46,14 +46,20 @@ export default function FavoritesScreen() {
           
           <Text style={styles.headerTitle}>FAVORITES</Text>
           
-          <TouchableOpacity onPress={toggleUnits} style={styles.iconBtn}>
-            <Text style={styles.unitBtnText}>{units === 'imperial' ? '°F' : '°C'}</Text>
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            {/* RESTORED: Unit toggle button next to settings cog */}
+            <TouchableOpacity onPress={toggleUnits} style={[styles.iconBtn, { marginRight: 10 }]}>
+              <Text style={styles.unitBtnText}>{units === 'imperial' ? '°F' : '°C'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => router.push('/settings')} style={styles.iconBtn}>
+              <Icons.MaterialCommunityIcons name="cog" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <FlatList 
           data={list}
-          // Fix: Uses name as key to prevent null zip crashes
           keyExtractor={(item: any) => item.name}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
           renderItem={({ item }) => (
@@ -73,7 +79,6 @@ export default function FavoritesScreen() {
                   {Math.round(units === 'imperial' ? item.temp : (item.temp - 32) * 5 / 9)}°
                 </Text>
               </TouchableOpacity>
-              
               <TouchableOpacity onPress={() => removeFav(item.name)} style={styles.deleteBtn}>
                 <Icons.MaterialCommunityIcons name="close" size={20} color="rgba(255,255,255,0.4)" />
               </TouchableOpacity>
@@ -95,15 +100,16 @@ const styles = StyleSheet.create({
     alignItems: 'center' 
   },
   headerTitle: { color: '#fff', fontSize: 18, fontWeight: '900', letterSpacing: 3 },
+  headerRight: { flexDirection: 'row', alignItems: 'center' },
   iconBtn: { 
     backgroundColor: 'rgba(255,255,255,0.1)', 
     width: 45, 
     height: 45, 
     borderRadius: 15, 
     alignItems: 'center', 
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)'
+    justifyContent: 'center', 
+    borderWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.2)' 
   },
   unitBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   glassCard: { 
