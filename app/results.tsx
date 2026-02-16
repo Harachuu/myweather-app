@@ -30,7 +30,7 @@ const getWeatherIcon = (icon: string) => {
 };
 
 export default function ResultsScreen() {
-  const { zip } = useLocalSearchParams(); // Syncing with Search Screen
+  const { zip } = useLocalSearchParams();
   const [weather, setWeather] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
@@ -47,11 +47,9 @@ export default function ResultsScreen() {
   };
 
   const fetchWeather = async (activeUnits = units) => {
-    // SECURE KEY FETCH
     const apiKey = process.env.EXPO_PUBLIC_WEATHER_API_KEY;
-    
     if (!apiKey) {
-      Alert.alert("Error", "API Key missing. Restart Expo with -c");
+      Alert.alert("Error", "API Key missing.");
       setLoading(false);
       return;
     }
@@ -114,37 +112,60 @@ export default function ResultsScreen() {
   const formatTime = (ts: number) => 
     new Date(ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+  // Attire Recommendation Logic
+  const getAttire = () => {
+    if (!weather) return { icon: 'tshirt-crew', value: 'Loading...' };
+    const temp = weather.main.temp;
+    const isImperial = units === 'imperial';
+    const condition = weather.weather[0].main.toLowerCase();
+    const windSpeed = weather.wind.speed;
+
+    // 1. Rain/Storm Priority
+    if (condition.includes('rain') || condition.includes('drizzle') || condition.includes('thunderstorm')) {
+      return { icon: 'umbrella', value: 'Recommend an umbrella' };
+    }
+    // 2. Wind Priority
+    if ((isImperial && windSpeed > 15) || (!isImperial && windSpeed > 6.7)) {
+      return { icon: 'weather-windy-variant', value: 'Recommend a jacket' };
+    }
+    // 3. Hot
+    if ((isImperial && temp > 80) || (!isImperial && temp > 26.6)) {
+      return { icon: 'sunglasses', value: 'Recommend sun protection' };
+    }
+    // 4. Cold
+    if ((isImperial && temp < 45) || (!isImperial && temp < 7.2)) {
+      return { icon: 'snowflake', value: 'Recommend heavy layers' };
+    }
+    // 5. Default Cool
+    return { icon: 'tshirt-crew', value: 'Recommend light layers' };
+  };
+
   if (loading && !weather) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#fff" />
-        <Text style={{color: '#fff', marginTop: 10}}>Loading {zip}...</Text>
       </View>
     );
   }
 
   const dynamicBg = getBackgroundColor(weather.weather[0].icon);
   const weatherIconName = getWeatherIcon(weather.weather[0].icon);
+  const attire = getAttire();
 
   return (
     <SafeAreaProvider>
       <SafeAreaView style={[styles.container, { backgroundColor: dynamicBg }]}>
         <View style={styles.nav}>
           <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
-            <Icons.MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
+            <Icons.MaterialCommunityIcons name="chevron-left" size={30} color="#fff" />
           </TouchableOpacity>
-          <View style={styles.navRight}>
-            <TouchableOpacity onPress={() => router.push('/favorites')} style={[styles.iconBtn, { marginRight: 10 }]}>
-              <Icons.MaterialCommunityIcons name="format-list-bulleted" size={24} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={toggleFavorite} style={styles.iconBtn}>
-              <Icons.MaterialCommunityIcons 
-                name={isSaved ? "heart" : "heart-plus"} 
-                size={24} 
-                color={isSaved ? "#ff4757" : "#fff"} 
-              />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity onPress={toggleFavorite} style={styles.iconBtn}>
+            <Icons.MaterialCommunityIcons 
+              name={isSaved ? "heart" : "heart-outline"} 
+              size={26} 
+              color={isSaved ? "#ff4757" : "#fff"} 
+            />
+          </TouchableOpacity>
         </View>
 
         <ScrollView 
@@ -152,43 +173,41 @@ export default function ResultsScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={loading && !!weather} onRefresh={() => fetchWeather()} tintColor="#fff" />}
         >
-          <View style={styles.glassHeader}>
-            <Text style={styles.city}>{weather.name.toUpperCase()}</Text>
-            
-            <TouchableOpacity onPress={toggleUnits} style={styles.unitToggle}>
-              <Text style={[styles.unitText, units === 'imperial' && styles.unitActive]}>°F</Text>
-              <View style={styles.unitPipe} />
-              <Text style={[styles.unitText, units === 'metric' && styles.unitActive]}>°C</Text>
-            </TouchableOpacity>
-
-            <View style={styles.glassDivider} />
-            <Text style={styles.zipLabel}>{zip}</Text>
-          </View>
-
-          <View style={styles.mainWeatherSection}>
-            <Icons.MaterialCommunityIcons name={weatherIconName} size={isSmallPhone ? 60 : 80} color="#fff" />
+          {/* Hero Section */}
+          <View style={styles.heroSection}>
+            <Text style={styles.city}>{weather.name}</Text>
             <Text style={styles.temp}>{Math.round(weather.main.temp)}°</Text>
-            <Text style={styles.desc}>{weather.weather[0].description.toUpperCase()}</Text>
-            <Text style={styles.feelsLike}>FEELS LIKE {Math.round(weather.main.feels_like)}°</Text>
+            
+            <Text style={styles.feelsLikeText}>FEELS LIKE {Math.round(weather.main.feels_like)}°</Text>
+            
+            <View style={styles.conditionContainer}>
+              <Icons.MaterialCommunityIcons name={weatherIconName} size={24} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.desc}>{weather.weather[0].description}</Text>
+            </View>
           </View>
 
+          {/* Grid Section */}
           <View style={styles.grid}>
-            <DetailCard icon="weather-sunny" label="SUNRISE" value={formatTime(weather.sys.sunrise)} color="#fbbf24" />
-            <DetailCard icon="weather-night" label="SUNSET" value={formatTime(weather.sys.sunset)} color="#818cf8" />
-            <DetailCard icon="water-percent" label="HUMIDITY" value={`${weather.main.humidity}%`} color="#3b82f6" />
-            <DetailCard 
-              icon="weather-windy" 
-              label="WIND" 
-              value={`${Math.round(weather.wind.speed)} ${units === 'imperial' ? 'mph' : 'm/s'}`} 
-              color="#f87171" 
+            <DetailTile icon="water-outline" label="Humidity" value={`${weather.main.humidity}%`} />
+            <DetailTile icon="weather-windy" label="Wind Speed" value={`${Math.round(weather.wind.speed)} ${units === 'imperial' ? 'mph' : 'm/s'}`} />
+            
+            {/* New Attire Recommendation Cell */}
+            <DetailTile 
+                icon={attire.icon} 
+                label="Attire" 
+                value={attire.value} 
+                isWide={true} 
             />
+            
+            <DetailTile icon="altimeter" label="Pressure" value={`${weather.main.pressure} hPa`} />
+            <DetailTile icon="weather-sunset-up" label="Sunrise" value={formatTime(weather.sys.sunrise)} />
+            <DetailTile icon="weather-sunset-down" label="Sunset" value={formatTime(weather.sys.sunset)} />
           </View>
 
-          <TouchableOpacity 
-            style={[styles.bigBtn, isSaved && styles.bigBtnActive]} 
-            onPress={toggleFavorite}
-          >
-            <Text style={styles.bigBtnText}>{isSaved ? "REMOVE FROM FAVORITES" : "ADD TO FAVORITES"}</Text>
+          <TouchableOpacity style={styles.glassActionBtn} onPress={toggleUnits}>
+            <Text style={styles.glassActionText}>
+               Switch to {units === 'imperial' ? 'Celsius' : 'Fahrenheit'}
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
@@ -196,38 +215,68 @@ export default function ResultsScreen() {
   );
 }
 
-const DetailCard = ({ icon, label, value, color }: any) => (
-  <View style={styles.card}>
-    <Icons.MaterialCommunityIcons name={icon} size={18} color={color} />
-    <Text style={styles.label}>{label}</Text>
-    <Text style={styles.val}>{value}</Text>
+const DetailTile = ({ icon, label, value, isWide }: any) => (
+  <View style={[styles.tile, isWide && { width: '100%' }]}>
+    <Icons.MaterialCommunityIcons name={icon} size={22} color="rgba(255,255,255,0.7)" />
+    <View style={styles.tileTextContainer}>
+      <Text style={styles.tileLabel}>{label}</Text>
+      <Text style={styles.tileVal} numberOfLines={1}>{value}</Text>
+    </View>
   </View>
 );
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' },
-  nav: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 10, zIndex: 10 },
-  navRight: { flexDirection: 'row' },
-  iconBtn: { backgroundColor: 'rgba(255,255,255,0.1)', padding: 10, borderRadius: 15 },
-  scrollContent: { flexGrow: 1, alignItems: 'center', justifyContent: 'space-between', paddingBottom: 30, paddingTop: 10 },
-  glassHeader: { backgroundColor: 'rgba(255,255,255,0.12)', paddingVertical: 15, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', alignItems: 'center', width: '85%', marginVertical: 10 },
-  unitToggle: { flexDirection: 'row', alignItems: 'center', marginTop: 10, backgroundColor: 'rgba(0,0,0,0.3)', paddingVertical: 4, paddingHorizontal: 12, borderRadius: 20 },
-  unitText: { color: 'rgba(255,255,255,0.4)', fontSize: 14, fontWeight: 'bold' },
-  unitActive: { color: '#fff' },
-  unitPipe: { width: 1, height: 12, backgroundColor: 'rgba(255,255,255,0.2)', marginHorizontal: 8 },
-  glassDivider: { height: 1, width: '50%', backgroundColor: 'rgba(255,255,255,0.3)', marginVertical: 8 },
-  zipLabel: { color: 'rgba(255,255,255,0.9)', fontSize: 18, fontWeight: '500' },
-  city: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
-  mainWeatherSection: { alignItems: 'center', marginVertical: 10 },
-  temp: { color: '#fff', fontSize: isSmallPhone ? 60 : 75, fontWeight: '200' },
-  feelsLike: { color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: 'bold' },
-  desc: { color: 'rgba(255,255,255,0.8)', fontSize: 16, textTransform: 'uppercase', letterSpacing: 2 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', width: '100%', paddingHorizontal: 20, justifyContent: 'space-between', marginVertical: 10 },
-  card: { backgroundColor: 'rgba(255,255,255,0.08)', padding: 12, borderRadius: 20, width: '48%', alignItems: 'center', marginBottom: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  label: { color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: 'bold', marginTop: 4 },
-  val: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  bigBtn: { backgroundColor: '#3b82f6', padding: 18, borderRadius: 20, width: '85%', alignItems: 'center', marginTop: 10 },
-  bigBtnActive: { backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: '#ff4757' },
-  bigBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 }
+  nav: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 20, 
+    paddingTop: 10 
+  },
+  iconBtn: { 
+    backgroundColor: 'rgba(255,255,255,0.15)', 
+    padding: 8, 
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)'
+  },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  heroSection: { alignItems: 'center', marginTop: 30, marginBottom: 40 },
+  city: { color: '#fff', fontSize: 32, fontWeight: '300', letterSpacing: 1 },
+  temp: { color: '#fff', fontSize: 100, fontWeight: 'bold', marginTop: 10 },
+  feelsLikeText: { color: 'rgba(255,255,255,0.6)', fontSize: 16, fontWeight: '600', marginBottom: 15, letterSpacing: 1 },
+  conditionContainer: { flexDirection: 'row', alignItems: 'center' },
+  desc: { color: 'rgba(255,255,255,0.8)', fontSize: 20, textTransform: 'capitalize' },
+  
+  grid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    justifyContent: 'space-between' 
+  },
+  tile: { 
+    backgroundColor: 'rgba(255,255,255,0.12)', 
+    padding: 20, 
+    borderRadius: 24, 
+    width: '48%', 
+    marginBottom: 15, 
+    borderWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.2)',
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  tileTextContainer: { marginLeft: 12, flex: 1 },
+  tileLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '600' },
+  tileVal: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginTop: 2 },
+  
+  glassActionBtn: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    marginTop: 10,
+    padding: 20,
+    borderRadius: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)'
+  },
+  glassActionText: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
 });

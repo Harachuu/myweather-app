@@ -33,42 +33,43 @@ export default function WeatherSearch() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
             style={{ flex: 1 }}
           >
-            
             <View style={styles.header}>
               <Text style={styles.logo}>MYWEATHER</Text>
-              
-              {/* FAVORITES BUTTON */}
               <TouchableOpacity 
                 onPress={() => router.push('/favorites')} 
                 style={styles.favoritesButton}
               >
-                <Text style={styles.favText}>MY FAVORITES </Text>
-                <Icons.MaterialCommunityIcons name="heart" size={20} color="#ff4757" />
+                <Icons.MaterialCommunityIcons name="heart" size={22} color="#ff4757" />
               </TouchableOpacity>
             </View>
             
             <View style={styles.content}>
-              <View style={styles.glassCard}>
-                <Icons.MaterialCommunityIcons name="weather-cloudy" size={80} color="#fff" style={{ marginBottom: 20 }} />
-                <Text style={styles.title}>Weather Search</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="5-Digit Zipcode"
-                  placeholderTextColor="rgba(255,255,255,0.4)"
-                  keyboardType="numeric"
-                  value={zip}
-                  onChangeText={setZip}
-                  maxLength={5}
-                  returnKeyType="done"
-                  onSubmitEditing={handleSearch}
-                />
-                <TouchableOpacity 
-                  style={[styles.button, { opacity: zip.length === 5 ? 1 : 0.5 }]} 
-                  onPress={handleSearch}
-                  disabled={zip.length !== 5}
-                >
-                  <Text style={styles.buttonText}>Get Forecast</Text>
-                </TouchableOpacity>
+              <View style={styles.mainDisplay}>
+                 <Icons.MaterialCommunityIcons name="weather-partly-cloudy" size={100} color="rgba(255,255,255,0.9)" />
+                 <Text style={styles.heroTitle}>Where would you{"\n"}like to search?</Text>
+              </View>
+
+              <View style={styles.searchSection}>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter Zipcode"
+                    placeholderTextColor="rgba(255,255,255,0.4)"
+                    keyboardType="numeric"
+                    value={zip}
+                    onChangeText={setZip}
+                    maxLength={5}
+                    returnKeyType="done"
+                    onSubmitEditing={handleSearch}
+                  />
+                  <TouchableOpacity 
+                    style={[styles.searchIconBtn, { opacity: zip.length === 5 ? 1 : 0.5 }]} 
+                    onPress={handleSearch}
+                    disabled={zip.length !== 5}
+                  >
+                    <Icons.MaterialCommunityIcons name="magnify" size={28} color="#fff" />
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </KeyboardAvoidingView>
@@ -83,53 +84,55 @@ const styles = StyleSheet.create({
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
-    paddingHorizontal: 20, 
+    paddingHorizontal: 25, 
     paddingTop: 20, 
     alignItems: 'center' 
   },
-  logo: { color: '#fff', fontSize: 20, fontWeight: '900', letterSpacing: 2 },
+  logo: { color: '#fff', fontSize: 18, fontWeight: '900', letterSpacing: 3 },
   favoritesButton: { 
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)', 
-    paddingVertical: 8, 
-    paddingHorizontal: 15, 
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)'
-  },
-  favText: { 
-    color: '#fff', 
-    fontSize: 12, 
-    fontWeight: '800', 
-    letterSpacing: 1 
-  },
-  content: { flex: 1, justifyContent: 'center', padding: 20 },
-  glassCard: { 
-    backgroundColor: 'rgba(255,255,255,0.05)', 
-    padding: 30, 
-    borderRadius: 30, 
-    alignItems: 'center', 
-    borderWidth: 1, 
-    borderColor: 'rgba(255,255,255,0.1)' 
-  },
-  title: { fontSize: 28, color: '#fff', fontWeight: 'bold', marginBottom: 25 },
-  input: { 
-    width: '100%', 
     backgroundColor: 'rgba(255,255,255,0.1)', 
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)'
+  },
+  content: { flex: 1, paddingHorizontal: 25, justifyContent: 'center' },
+  mainDisplay: { alignItems: 'center', marginBottom: 50 },
+  heroTitle: { 
+    fontSize: 36, 
     color: '#fff', 
-    padding: 20, 
-    borderRadius: 20, 
-    fontSize: 24, 
+    fontWeight: 'bold', 
     textAlign: 'center', 
-    marginBottom: 20 
+    marginTop: 20,
+    lineHeight: 42
   },
-  button: { 
-    width: '100%', 
-    backgroundColor: '#3b82f6', 
-    padding: 20, 
-    borderRadius: 20, 
-    alignItems: 'center' 
+  searchSection: { width: '100%' },
+  inputWrapper: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    paddingLeft: 25,
+    paddingRight: 10,
+    height: 70,
   },
-  buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' }
+  input: { 
+    flex: 1,
+    color: '#fff', 
+    fontSize: 20, 
+    fontWeight: '500'
+  },
+  searchIconBtn: {
+    backgroundColor: '#3b82f6',
+    width: 50,
+    height: 50,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center'
+  }
 });
