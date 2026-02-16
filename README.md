@@ -16,3 +16,7 @@ Built with **React Native (Expo)**, **TypeScript**, **OpenWeather API**, and **A
   <img src="./screenshots/FAVORITES_F.PNG" width="24%" />
   <img src="./screenshots/FAVORITES_C.PNG" width="24%" />
 </p>
+<p align="center">
+  <img src="./screenshots/SETTINGS.PNG" width="24%" />
+  <img src="./screenshots/SETTINGS_ALERTS.PNG" width="24%" />
+</p>
