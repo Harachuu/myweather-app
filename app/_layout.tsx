@@ -16,8 +16,4 @@ export default function Layout() {
       </Stack>
     </GestureHandlerRootView>
   );
-<<<<<<< HEAD
 }  
-=======
-} 
->>>>>>> 744ac07 (Updated logic and layout)

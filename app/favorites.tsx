@@ -10,92 +10,72 @@ export default function FavoritesScreen() {
   const [units, setUnits] = useState<'imperial' | 'metric'>('imperial'); 
   const router = useRouter();
 
-  // Load both saved unit preferences
   const loadData = async () => {
     try {
       const [storedFavs, storedUnits] = await Promise.all([
         AsyncStorage.getItem('favorites'),
         AsyncStorage.getItem('unit_preference')
       ]);
-
       if (storedFavs) setList(JSON.parse(storedFavs));
       if (storedUnits) setUnits(storedUnits as 'imperial' | 'metric');
-    } catch (e) {
-      console.error("Error loading data", e);
-    }
+    } catch (e) { console.error("Error loading data", e); }
   };
 
-  // Save unit preference whenever it changes
   const toggleUnits = async () => {
     const newUnit = units === 'imperial' ? 'metric' : 'imperial';
     setUnits(newUnit);
     await AsyncStorage.setItem('unit_preference', newUnit);
   };
 
-  const removeFav = async (zip: string) => {
-    const newList = list.filter((item: any) => item.zip !== zip);
+  const removeFav = async (name: string) => {
+    const newList = list.filter((item: any) => item.name !== name);
     setList(newList);
     await AsyncStorage.setItem('favorites', JSON.stringify(newList));
   };
 
-  // Convert F to C automatically
-  const displayTemp = (temp: number) => {
-    if (units === 'imperial') return Math.round(temp);
-    return Math.round((temp - 32) * 5 / 9);
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Icons.MaterialCommunityIcons name="heart-outline" size={60} color="rgba(255,255,255,0.1)" />
-      <Text style={styles.emptyText}>No favorite cities yet.</Text>
-    </View>
-  );
+  useEffect(() => { loadData(); }, []);
 
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
+        {/* Clean Header: Single Back Button, Center Title, Right Toggle */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Icons.MaterialCommunityIcons name="chevron-left" size={32} color="#fff" />
+          <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
+            <Icons.MaterialCommunityIcons name="chevron-left" size={30} color="#fff" />
           </TouchableOpacity>
           
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>Favorites</Text>
-            
-            <TouchableOpacity onPress={toggleUnits} style={styles.unitToggle}>
-              <Text style={[styles.unitText, units === 'imperial' && styles.unitActive]}>°F</Text>
-              <View style={styles.unitPipe} />
-              <Text style={[styles.unitText, units === 'metric' && styles.unitActive]}>°C</Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.headerTitle}>FAVORITES</Text>
           
-          <View style={{ width: 44 }} /> 
+          <TouchableOpacity onPress={toggleUnits} style={styles.iconBtn}>
+            <Text style={styles.unitBtnText}>{units === 'imperial' ? '°F' : '°C'}</Text>
+          </TouchableOpacity>
         </View>
 
         <FlatList 
           data={list}
-          keyExtractor={(item: any) => item.zip.toString()}
-          ListEmptyComponent={renderEmpty}
-          contentContainerStyle={{ paddingBottom: 40 }}
+          // Fix: Uses name as key to prevent null zip crashes
+          keyExtractor={(item: any) => item.name}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
           renderItem={({ item }) => (
-            <View style={styles.row}>
+            <View style={styles.glassCard}>
               <TouchableOpacity 
-                style={styles.infoArea} 
-                onPress={() => router.push({ pathname: '/results', params: { zip: item.zip } })}
+                style={styles.cardContent} 
+                onPress={() => router.push({ 
+                  pathname: '/results', 
+                  params: { zip: item.zip, lat: item.lat, lon: item.lon } 
+                })}
               >
                 <View>
-                  <Text style={styles.name}>{item.name.toUpperCase()}</Text>
-                  <Text style={styles.zip}>{item.zip}</Text>
+                  <Text style={styles.cityName}>{item.name.toUpperCase()}</Text>
+                  <Text style={styles.zipText}>{item.zip || 'Current Location'}</Text>
                 </View>
-                <Text style={styles.temp}>{displayTemp(item.temp)}°</Text>
+                <Text style={styles.tempText}>
+                  {Math.round(units === 'imperial' ? item.temp : (item.temp - 32) * 5 / 9)}°
+                </Text>
               </TouchableOpacity>
               
-              <TouchableOpacity onPress={() => removeFav(item.zip)} style={styles.deleteBtn}>
-                <Icons.MaterialCommunityIcons name="close-circle" size={22} color="rgba(255,255,255,0.3)" />
+              <TouchableOpacity onPress={() => removeFav(item.name)} style={styles.deleteBtn}>
+                <Icons.MaterialCommunityIcons name="close" size={20} color="rgba(255,255,255,0.4)" />
               </TouchableOpacity>
             </View>
           )}
@@ -107,20 +87,45 @@ export default function FavoritesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 20, alignItems: 'center' },
-  backBtn: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 6 },
-  titleContainer: { alignItems: 'center' },
-  title: { color: '#fff', fontSize: 24, fontWeight: 'bold', letterSpacing: 1 },
-  unitToggle: { flexDirection: 'row', alignItems: 'center', marginTop: 5, backgroundColor: 'rgba(255,255,255,0.1)', paddingVertical: 2, paddingHorizontal: 10, borderRadius: 15 },
-  unitText: { color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: 'bold' },
-  unitActive: { color: '#fff' },
-  unitPipe: { width: 1, height: 10, backgroundColor: 'rgba(255,255,255,0.2)', marginHorizontal: 6 },
-  row: { backgroundColor: 'rgba(255,255,255,0.05)', marginHorizontal: 20, marginBottom: 12, borderRadius: 25, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', paddingRight: 15 },
-  infoArea: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
-  name: { color: '#fff', fontSize: 16, fontWeight: 'bold', letterSpacing: 0.5 },
-  zip: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 },
-  temp: { color: '#fff', fontSize: 32, fontWeight: '200' },
-  deleteBtn: { padding: 10 },
-  emptyContainer: { alignItems: 'center', marginTop: 100 },
-  emptyText: { color: 'rgba(255,255,255,0.3)', fontSize: 16, marginTop: 15 }
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 20, 
+    paddingVertical: 20, 
+    alignItems: 'center' 
+  },
+  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '900', letterSpacing: 3 },
+  iconBtn: { 
+    backgroundColor: 'rgba(255,255,255,0.1)', 
+    width: 45, 
+    height: 45, 
+    borderRadius: 15, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)'
+  },
+  unitBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  glassCard: { 
+    backgroundColor: 'rgba(255,255,255,0.08)', 
+    marginBottom: 15, 
+    borderRadius: 24, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.15)', 
+    paddingRight: 10 
+  },
+  cardContent: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
+  cityName: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  zipText: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 4 },
+  tempText: { color: '#fff', fontSize: 36, fontWeight: '200' },
+  deleteBtn: { 
+    width: 32, 
+    height: 32, 
+    borderRadius: 16, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    backgroundColor: 'rgba(255,255,255,0.05)' 
+  }
 });
