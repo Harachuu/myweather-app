@@ -14,16 +14,37 @@ import {
   View
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import Parse from 'parse/react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
 
-  const handleLogin = () => {
-    // Logic: Requires both fields to be filled
+// back4app implementation
+const handleLogin = async () => {
     if (email && password) {
-      router.replace('/weather');
+      try {
+        // Attempt to log in the user
+        const user = await Parse.User.logIn(email, password);
+        if (user) router.replace('/weather');
+      } catch (error: any) {
+        // If user doesn't exist (Error 101), sign them up automatically
+        if (error.code === 101) {
+          try {
+            const newUser = new Parse.User();
+            newUser.set("username", email);
+            newUser.set("password", password);
+            newUser.set("email", email);
+            await newUser.signUp();
+            router.replace('/weather');
+          } catch (signUpError: any) {
+            Alert.alert('Error', signUpError.message);
+          }
+        } else {
+          Alert.alert('Error', error.message);
+        }
+      }
     } else {
       Alert.alert('Wait!', 'Please enter your email and password.');
     }
