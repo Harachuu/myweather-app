@@ -84,7 +84,6 @@ export default function ResultsScreen() {
     initialLoad().then(() => fetchWeather());
   }, [zip, lat, lon, units]);
 
-  // RESTORED: Unit toggle logic
   const toggleUnits = async () => {
     const newUnit = units === 'imperial' ? 'metric' : 'imperial';
     setUnits(newUnit);

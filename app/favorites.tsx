@@ -21,7 +21,6 @@ export default function FavoritesScreen() {
     } catch (e) { console.error("Error loading data", e); }
   };
 
-  // RESTORED: Unit toggle logic for Favorites page
   const toggleUnits = async () => {
     const newUnit = units === 'imperial' ? 'metric' : 'imperial';
     setUnits(newUnit);
@@ -47,7 +46,6 @@ export default function FavoritesScreen() {
           <Text style={styles.headerTitle}>FAVORITES</Text>
           
           <View style={styles.headerRight}>
-            {/* RESTORED: Unit toggle button next to settings cog */}
             <TouchableOpacity onPress={toggleUnits} style={[styles.iconBtn, { marginRight: 10 }]}>
               <Text style={styles.unitBtnText}>{units === 'imperial' ? '°F' : '°C'}</Text>
             </TouchableOpacity>

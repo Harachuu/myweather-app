@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "MyWeather",
-    "slug": "my-weather",
+    "name": "WeatherZip",
+    "slug": "weather-zip",
     "version": "1.0.0",
-    "scheme": "my-weather",
+    "scheme": "weather-zip",
     "userInterfaceStyle": "dark",
     "icon": "./assets/icon.png",
     "splash": {

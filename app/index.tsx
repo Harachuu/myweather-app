@@ -39,7 +39,7 @@ export default function LoginScreen() {
           >
             <View style={styles.headerArea}>
               <Icons.MaterialCommunityIcons name="weather-partly-cloudy" size={80} color="rgba(255,255,255,0.9)" />
-              <Text style={styles.title}>MyWeather</Text>
+              <Text style={styles.title}>WeatherZip</Text>
               <Text style={styles.subtitle}>Enter your details to continue</Text>
             </View>
 

@@ -61,7 +61,7 @@ export default function WeatherSearch() {
               <TouchableOpacity onPress={() => router.push('/settings')} style={styles.iconBtn}>
                 <Icons.MaterialCommunityIcons name="cog" size={24} color="#fff" />
               </TouchableOpacity>
-              <Text style={styles.logo}>MYWEATHER</Text>
+              <Text style={styles.logo}>WEATHERZIP</Text>
               <TouchableOpacity onPress={() => router.push('/favorites')} style={styles.favoritesButton}>
                 <Icons.MaterialCommunityIcons name="heart-multiple" size={22} color="#ff4757" />
               </TouchableOpacity>
