@@ -1,6 +1,7 @@
 import * as Icons from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import Parse from 'parse/react-native';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -36,6 +37,15 @@ export default function SettingsScreen() {
   };
 
   const timeOptions = ['07:00 AM', '08:00 AM', '09:00 AM', '06:00 PM', '08:00 PM'];
+
+  const handleLogout = async () => {
+    try {
+      await Parse.User.logOut();
+      router.replace('/');
+    } catch (e) {
+      console.error("Failed to logout", e);
+    }
+  };
 
   return (
     <SafeAreaProvider>
@@ -88,6 +98,13 @@ export default function SettingsScreen() {
               </View>
             </>
           )}
+
+          {/* added LOGOUT feature */}
+          <Text style={styles.sectionLabel}>ACCOUNT</Text>
+          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+            <Icons.MaterialCommunityIcons name="logout" size={20} color="#ff4757" />
+            <Text style={styles.logoutText}>LOGOUT</Text>
+          </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -108,5 +125,25 @@ const styles = StyleSheet.create({
   timeOption: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 },
   timeText: { color: 'rgba(255,255,255,0.6)', fontSize: 16 },
   activeTimeText: { color: '#fff', fontWeight: 'bold' },
-  separator: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginHorizontal: 20 }
+  separator: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginHorizontal: 20 },
+  
+  // added for LOGOUT
+  logoutBtn: { 
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 71, 87, 0.1)', 
+    padding: 20, 
+    borderRadius: 24, 
+    borderWidth: 1, 
+    borderColor: 'rgba(255, 71, 87, 0.3)', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    marginTop: 10,
+    marginBottom: 30
+  },
+  logoutText: { 
+    color: '#ff4757', 
+    fontWeight: 'bold', 
+    letterSpacing: 2,
+    marginLeft: 10
+  },
 });

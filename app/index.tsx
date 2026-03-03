@@ -1,7 +1,9 @@
 import * as Icons from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import Parse from 'parse/react-native';
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Keyboard,
   KeyboardAvoidingView,
@@ -14,39 +16,61 @@ import {
   View
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import Parse from 'parse/react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-// back4app implementation
-const handleLogin = async () => {
-    if (email && password) {
-      try {
-        // Attempt to log in the user
-        const user = await Parse.User.logIn(email, password);
-        if (user) router.replace('/weather');
-      } catch (error: any) {
-        // If user doesn't exist (Error 101), sign them up automatically
-        if (error.code === 101) {
-          try {
-            const newUser = new Parse.User();
-            newUser.set("username", email);
-            newUser.set("password", password);
-            newUser.set("email", email);
-            await newUser.signUp();
-            router.replace('/weather');
-          } catch (signUpError: any) {
-            Alert.alert('Error', signUpError.message);
-          }
-        } else {
-          Alert.alert('Error', error.message);
-        }
-      }
-    } else {
+  // Back4app Login & Auto-Signup Implementation
+  const handleLogin = async () => {
+    if (!email || !password) {
       Alert.alert('Wait!', 'Please enter your email and password.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Attempt to log in the user
+      const user = await Parse.User.logIn(email, password);
+      if (user) router.replace('/weather');
+    } catch (error: any) {
+      // If user doesn't exist (Error 101), sign them up automatically
+      if (error.code === 101) {
+        try {
+          const newUser = new Parse.User();
+          newUser.set("username", email);
+          newUser.set("password", password);
+          newUser.set("email", email);
+          await newUser.signUp();
+          router.replace('/weather');
+        } catch (signUpError: any) {
+          Alert.alert('Error', signUpError.message);
+        }
+      } else {
+        Alert.alert('Error', error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Back4app Forgot Password Implementation
+  const handleForgotPassword = async () => {
+    if (!email) {
+      Alert.alert('Email Required', 'Please enter your email address first so we can send you a reset link.');
+      return;
+    }
+
+    try {
+      await Parse.User.requestPasswordReset(email);
+      Alert.alert(
+        'Email Sent', 
+        `A password reset link has been sent to ${email}. Please check your inbox.`
+      );
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
     }
   };
 
@@ -60,7 +84,7 @@ const handleLogin = async () => {
           >
             <View style={styles.headerArea}>
               <Icons.MaterialCommunityIcons name="weather-partly-cloudy" size={80} color="rgba(255,255,255,0.9)" />
-              <Text style={styles.title}>WeatherZip</Text>
+              <Text style={styles.title}>MyWeather</Text>
               <Text style={styles.subtitle}>Enter your details to continue</Text>
             </View>
 
@@ -70,7 +94,7 @@ const handleLogin = async () => {
                 <TextInput 
                   style={styles.input} 
                   placeholder="Email Address" 
-                  placeholderTextColor="rgba(255,255,255,0.3)" // Darker placeholder for glass effect
+                  placeholderTextColor="rgba(255,255,255,0.3)"
                   onChangeText={setEmail} 
                   autoCapitalize="none" 
                   keyboardType="email-address"
@@ -82,17 +106,25 @@ const handleLogin = async () => {
                 <TextInput 
                   style={styles.input} 
                   placeholder="Password" 
-                  placeholderTextColor="rgba(255,255,255,0.3)" // Darker placeholder for glass effect
+                  placeholderTextColor="rgba(255,255,255,0.3)"
                   secureTextEntry 
                   onChangeText={setPassword} 
                 />
               </View>
 
-              <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                <Text style={styles.buttonText}>LOGIN</Text>
+              <TouchableOpacity 
+                style={[styles.button, loading && { opacity: 0.7 }]} 
+                onPress={handleLogin}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>LOGIN</Text>
+                )}
               </TouchableOpacity>
               
-              <TouchableOpacity style={styles.forgotBtn}>
+              <TouchableOpacity style={styles.forgotBtn} onPress={handleForgotPassword}>
                 <Text style={styles.forgotText}>Forgot Password?</Text>
               </TouchableOpacity>
             </View>
@@ -104,56 +136,27 @@ const handleLogin = async () => {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#0f172a' // Matching your app's deep slate theme
-  },
-  inner: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 30,
-  },
-  headerArea: {
-    alignItems: 'center',
-    marginBottom: 50,
-  },
-  title: { 
-    fontSize: 42, 
-    fontWeight: '900', 
-    color: '#fff', 
-    marginTop: 10,
-    letterSpacing: 1
-  },
-  subtitle: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 16,
-    marginTop: 5,
-  },
-  form: {
-    width: '100%',
-  },
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  inner: { flex: 1, justifyContent: 'center', paddingHorizontal: 30 },
+  headerArea: { alignItems: 'center', marginBottom: 50 },
+  title: { fontSize: 42, fontWeight: '900', color: '#fff', marginTop: 10, letterSpacing: 1 },
+  subtitle: { color: 'rgba(255,255,255,0.5)', fontSize: 16, marginTop: 5 },
+  form: { width: '100%' },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)', // Glass background
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: 20,
     marginBottom: 15,
     paddingHorizontal: 15,
     height: 65,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)', // Subtle glass border
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: { 
-    flex: 1,
-    color: '#fff', 
-    fontSize: 16,
-    fontWeight: '500',
-  },
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, color: '#fff', fontSize: 16, fontWeight: '500' },
   button: { 
-    backgroundColor: '#3b82f6', // Matching your search button blue
+    backgroundColor: '#3b82f6', 
     padding: 20, 
     borderRadius: 20, 
     alignItems: 'center',
@@ -164,19 +167,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-  buttonText: { 
-    color: '#fff', 
-    fontWeight: '900', 
-    fontSize: 16,
-    letterSpacing: 2
-  },
-  forgotBtn: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  forgotText: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 14,
-    fontWeight: '600',
-  }
+  buttonText: { color: '#fff', fontWeight: '900', fontSize: 16, letterSpacing: 2 },
+  forgotBtn: { alignItems: 'center', marginTop: 20 },
+  forgotText: { color: 'rgba(255,255,255,0.4)', fontSize: 14, fontWeight: '600' }
 });
